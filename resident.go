@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"database/sql"
 	"github.com/google/uuid"
+    "encoding/json"
 )
 type Resident struct{
 	ResidentId uuid.UUID
@@ -13,6 +14,17 @@ type Resident struct{
 	PhoneNumber int
 	Email string
 	ResidentStatus string
+}
+func ResidentJsonToString(jsonString string)(map[string]interface{}){
+    var data map[string]interface{}
+
+	// Unmarshal the JSON string (converted to a byte slice) into the map
+	err := json.Unmarshal([]byte(jsonString), &data)
+	if err != nil {
+		fmt.Println("Error unmarshaling JSON:", err)
+		return nil
+	}
+    return data
 }
 func getAllResidents(db *sql.DB)([]Resident, error){
 	// An albums slice to hold data from returned rows.
@@ -61,18 +73,52 @@ func getResidentByName(db *sql.DB, Name string)([]Resident,error){
 func getResidentByID(db *sql.DB, id string )(Resident,error){
     // An albums slice to hold data from returned rows.
     var resident Resident
-	residentId := uuid.MustParse(id)
-    row := db.QueryRow("SELECT * FROM Resident WHERE ResidentID = ?",residentId)
+	resident_id := uuid.MustParse(id)
+    row := db.QueryRow("SELECT * FROM Resident WHERE ResidentID = ?",resident_id)
     
     if err := row.Scan(&resident.ResidentId, &resident.FirstName, &resident.LastName, &resident.Address,&resident.PhoneNumber,&resident.Email,&resident.ResidentStatus); err != nil {
         if err == sql.ErrNoRows {
-            return resident, fmt.Errorf("albumsById %d: no such resident", residentId)
+            return resident, fmt.Errorf("albumsById %d: no such resident", resident_id)
         }
-        return resident, fmt.Errorf("residentByName %d: %v", residentId, err)
+        return resident, fmt.Errorf("residentByName %d: %v", resident_id, err)
     }
 
     return resident, nil
 }
-// func addResident(resident Resident)(uuid.UUID,error){
-// 	result, err := db.Exec("INSERT INTO Resident ()")
+func addResident(db *sql.DB,resident Resident)(int64,error){
+	result, err := db.Exec("INSERT INTO Resident (first_name,last_name,address,phone_number,email,resident_status) VALUES (?,?,?,?,?,?) RETURNING resident_id",resident.FirstName,resident.LastName,resident.Address,resident.PhoneNumber,resident.Email,resident.ResidentStatus)
+    if err != nil {
+        return 0, fmt.Errorf("addResident: %v", err)
+    }
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return 0, fmt.Errorf("addResident: %v", err)
+    }
+    return rowsAffected, nil
+}
+
+func deleteResidentbyId(db *sql.DB,id string)(int64,error){
+    resident_id := uuid.MustParse(id)
+    result, err := db.Exec("DELETE FROM Resident WHERE resident_id = ?", resident_id)
+    if err != nil {
+        return 0, fmt.Errorf("deleteResident: %v", err)
+    }
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return 0, fmt.Errorf("deleteResident: %v", err)
+    }
+    return rowsAffected, nil
+    
+}
+// func updateResident(db *sql.DB, resident_id uuid.UUID, fields map[string]interface{})(int64,error){
+    
+//     result, err := db.Exec("UPDATE Resident "+fields+" WHERE resident_id = ?",resident_id)
+//     if err != nil {
+//         return 0, fmt.Errorf("UpdateResident: %v", err)
+//     }
+//     id, err := result.LastInsertId()
+//     if err != nil {
+//         return 0, fmt.Errorf("UpdateResident: %v", err)
+//     }
+//     return id, nil
 // }

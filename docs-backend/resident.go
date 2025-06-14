@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"github.com/google/uuid"
     "encoding/json"
+    "strings"
 )
 type Resident struct{
 	ResidentId uuid.UUID
@@ -110,15 +111,26 @@ func deleteResidentbyId(db *sql.DB,id string)(int64,error){
     return rowsAffected, nil
     
 }
-// func updateResident(db *sql.DB, resident_id uuid.UUID, fields map[string]interface{})(int64,error){
-    
-//     result, err := db.Exec("UPDATE Resident "+fields+" WHERE resident_id = ?",resident_id)
-//     if err != nil {
-//         return 0, fmt.Errorf("UpdateResident: %v", err)
-//     }
-//     id, err := result.LastInsertId()
-//     if err != nil {
-//         return 0, fmt.Errorf("UpdateResident: %v", err)
-//     }
-//     return id, nil
-// }
+func updateResident(db *sql.DB, id string, fields map[string]string)(int64,error){
+    resident_id := uuid.MustParse(id)
+    var sb strings.Builder
+
+    for col, value := range fields{
+        sb.WriteString(fmt.Sprintf("%s = '%s',",col,value)) 
+    }
+
+    updateFields := sb.String()
+
+    if len(updateFields) > 0 {
+		updateFields = updateFields[:len(updateFields)-1] // Remove trailing comma
+	}
+    result, err := db.Exec("UPDATE Resident SET "+updateFields+" WHERE resident_id = ?",resident_id)
+    if err != nil {
+        return 0, fmt.Errorf("UpdateResident: %v", err)
+    }
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return 0, fmt.Errorf("UpdateResident: %v", err)
+    }
+    return rowsAffected, nil
+}

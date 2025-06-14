@@ -1,4 +1,4 @@
-module github.com/sandershi-dev/GoDocs
+module github.com/sandershi-dev/RealEstateDocs
 
 go 1.24.3
 

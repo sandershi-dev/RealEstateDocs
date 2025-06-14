@@ -56,6 +56,11 @@ func initDB()(*sql.DB){
 
 
 func main() {
+    update := map[string]string{
+        "first_name": "Roderick",
+        "last_name": "Hutcherson",
+    }
+
     http.HandleFunc("/", handler)
     loadEnv()
 	db := initDB()

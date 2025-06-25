@@ -53,7 +53,7 @@ func getResidentByName(db *sql.DB, Name string)([]Resident,error){
     // An albums slice to hold data from returned rows.
     var residents []Resident
 
-    rows,err := db.Query("SELECT * FROM Resident WHERE FirstName = ? OR LastName =?",Name, Name)
+    rows,err := db.Query("SELECT * FROM Resident WHERE first_name = ? OR last_name =?",Name, Name)
 	if err != nil {
         return nil, fmt.Errorf("getAllResident %v", err)
     }
@@ -75,7 +75,7 @@ func getResidentByID(db *sql.DB, id string )(Resident,error){
     // An albums slice to hold data from returned rows.
     var resident Resident
 	resident_id := uuid.MustParse(id)
-    row := db.QueryRow("SELECT * FROM Resident WHERE ResidentID = ?",resident_id)
+    row := db.QueryRow("SELECT * FROM Resident WHERE resident_id = ?",resident_id)
     
     if err := row.Scan(&resident.ResidentId, &resident.FirstName, &resident.LastName, &resident.Address,&resident.PhoneNumber,&resident.Email,&resident.ResidentStatus); err != nil {
         if err == sql.ErrNoRows {

@@ -5,6 +5,7 @@ import (
 	"log"
     "os"
 	"net/http"
+    "net/url"
 	"github.com/go-sql-driver/mysql"
 	"database/sql"
     "github.com/joho/godotenv"
@@ -13,12 +14,30 @@ import (
 func handler(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
 }
-func invoiceHandler(w http.ResponseWriter, r *http.Request){
-	//action := r.URL.Path[len("/invoice/"):]
+var residentHandlerFuncMap = map[string]func(*sql.DB, url.Values)(Resident,error){
+    "GET": getResident,
+    }
+
+
+func getResident(db *sql.DB,params url.Values)([]Resident,error){
+    var resident Resident
+    if(params.Has("id")){
+        return getResidentByID(db, params.Get("id"))
+    }
+    if(param.Has("name")){
+        return getResidentByName(db, params.Get("name"))
+    }
+    return resident, nil
 }
-// func residentHandler(w http.ResponseWriter, r * http.Request){
-//     action := r.URL.Path[len("residents/"):]
-// }
+
+func residentHandler(w http.ResponseWriter, r * http.Request){
+    action := r.Method
+    params := r.URL.Query()
+    db := initDB()
+    fmt.Println(residentHandlerFuncMap[action](db, params))
+    
+    
+}
 func loadEnv(){
     err := godotenv.Load()
     
@@ -56,14 +75,11 @@ func initDB()(*sql.DB){
 
 
 func main() {
-    update := map[string]string{
-        "first_name": "Roderick",
-        "last_name": "Hutcherson",
-    }
-
-    http.HandleFunc("/", handler)
+    //http.HandleFunc("/", handler)
     loadEnv()
 	db := initDB()
+    http.HandleFunc("/residents/",residentHandler)
+
     fmt.Println(getAllResidents(db))
     log.Fatal(http.ListenAndServe(":8080", nil))
 }
